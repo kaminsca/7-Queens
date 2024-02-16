@@ -94,7 +94,7 @@ def random_restart_hill_climbing(max_restarts):
         state, val, steps, init_cost = hill_climbing(random_state)
         steps_sum += steps
         if val == 0:
-            return state, val, i, steps_sum
+            return state, val, i + 1, steps_sum
 
 def simulated_annealing(max_iterations):
     """
@@ -151,8 +151,9 @@ def genetic_algorithm(population_size, mutation_rate, max_iterations):
         population.append((individual, fitness))
     for iterations in range(max_iterations):
         population_2 = []
+        # Create 4 new children
         for i in range(population_size):
-            # fitnesses = [ind[1] for ind in population]
+            # lower fitness should be more heavily weighted
             fitnesses = [1.0 / (ind[1] + 1e-6) for ind in population]
             individuals = [ind[0] for ind in population]
             probabilities = np.array(fitnesses) / np.sum(fitnesses)
@@ -160,9 +161,11 @@ def genetic_algorithm(population_size, mutation_rate, max_iterations):
             parent1, parent2 = population[parent_indices[0]], population[parent_indices[1]]
 
             child = reproduce(parent1, parent2)
+            # mutate child randomly
             if random.random() < mutation_rate:
                 child = mutate(child)
             population_2.append(child)
+            # save best h value
             if child[1] < min_h: min_h = child[1]
         population = population_2
     return min_h
@@ -185,17 +188,17 @@ def reproduce(parent1, parent2):
     # print(f'c value: {c}, p1: {parent1[0]}, p2: {parent2[0]}, offspring: {offspring}')
     fitness = h(offspring)
     return (offspring, fitness)
-def mutate(individual):
+def mutate(child):
     """
     Changes the row value of a random column in the individual's state
     :param individual: Tuple (array, cost) representing the child to mutate
     :return: Returns a tuple (array, cost) representing the mutated child
     """
-    change_index = random.randint(0,7)
-    new_val = random.randint(0,7)
-    individual[0][change_index] = new_val
-    individual[1] = h(individual[0])
-    return individual
+    individual = child[0]
+    change_index = random.randint(0, 7)
+    new_val = random.randint(0, 7)
+    individual[change_index] = new_val
+    return (individual, h(individual))
 
 if __name__ == '__main__':
     # Hill Climbing
@@ -231,7 +234,7 @@ if __name__ == '__main__':
     # Genetic Algorithm
     min_h_sum = 0
     for i in range(10000):
-        print(i)
+        # print(i)
         min_h = genetic_algorithm(4, 0.1, 100)
         min_h_sum += min_h
     avg_min_h = min_h_sum / 10000.0
